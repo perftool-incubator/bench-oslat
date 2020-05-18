@@ -1,0 +1,20 @@
+{
+    "rickshaw-benchmark": {
+        "schema": {
+            "version": "2020.04.14"
+        }
+    },
+    "benchmark": "fio",
+    "controller" : {
+        "post-script" : "%bench-dir%/sysjitter-post-process"
+    },
+    "client" : {
+        "files-from-controller": [
+            {
+                "src": "%bench-dir%/sysjitter-start",
+                "dest": "/usr/bin/"
+            }
+        ],
+        "start" : "sysjitter-start"
+    }
+}
