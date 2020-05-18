@@ -1,0 +1,33 @@
+{
+    "workshop": {
+        "schema": {
+            "version": "2020.03.02"
+        }
+    },
+    "userenvs": [
+        {
+            "name": "default",
+            "requirements": [
+                "sysjitter2_xzpeter_src"
+            ]
+        }
+    ],
+    "requirements": [
+        {
+            "name": "sysjitter2_xzpeter_src",
+            "type": "source",
+            "source_info": {
+                "url": "https://github.com/xzpeter/sysjitter2/archive/master.tar.gz",
+                "filename": "master.tar.gz",
+                "commands": {
+                    "unpack": "tar -xzf master.tar.gz",
+                    "get_dir": "tar -tzf master.tar.gz | head -n 1",
+                    "commands": [
+                        "make",
+                        "/bin/cp -f sysjitter2 /usr/bin"
+                    ]
+                }
+            }
+        }
+    ]
+}
