@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
-exec >sysjitter-client-stderrout.txt
+exec >oslat-client-stderrout.txt
 exec 2>&1
 
 function convert_number_range() {
@@ -63,8 +63,11 @@ echo "hostname: `hostname`"
 
 no_load_balance=0
 rtprio_opt=""
+max_cpus=""
 runtime=300
-opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,runtime:" -n "getopt.sh" -- "$@");
+cpu_range=`cat /proc/self/status | grep Cpus_allowed_list: | cut -f 2`
+
+opts=$(getopt -q -o "" --longoptions "cpu-range:,no-load-balance:,rtprio:,runtime:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -88,6 +91,11 @@ while true; do
             runtime=$1
             shift;
             ;;
+        --cpu-range)
+            shift;
+            cpu_range=$1
+            shift;
+            ;;
         --)
             shift;
             break
@@ -98,10 +106,9 @@ while true; do
     esac
 done
 
-cpus_range=`cat /proc/self/status | grep Cpus_allowed_list: | cut -f 2`
 cpus=""
 cpus_list=""
-for cpus in `echo "$cpus_range" | sed -e 's/,/ /g'`; do
+for cpus in `echo "$cpu_range" | sed -e 's/,/ /g'`; do
         if echo "$cpus" | grep -q -- "-"; then
                 cpus=`echo $cpus | sed -e 's/-/ /'`
                 cpus=`seq $cpus | sed -e 's/ /,/g'`
@@ -119,7 +126,7 @@ fi
 master_cpu=`echo $cpus_list | awk -F, '{print $1}'`
 worker_cpus=`echo $cpus_list | sed -e s/^$master_cpu,//`
 
-cmd="sysjitter2 --runtime $runtime $rtprio_opt --cpu-list $worker_cpus"
+cmd="oslat --runtime $runtime $rtprio_opt --cpu-list $worker_cpus"
 echo "Going to execute $cmd"
 $cmd
 rc=$?

@@ -6,20 +6,20 @@
     },
     "benchmark": "fio",
     "controller" : {
-        "post-script" : "%bench-dir%/sysjitter-post-process"
+        "post-script" : "%bench-dir%/oslat-post-process"
     },
     "client" : {
         "files-from-controller": [
             {
-                "src": "%bench-dir%/sysjitter-start",
+                "src": "%bench-dir%/oslat-start",
                 "dest": "/usr/bin/"
             },
             {
-                "src": "%bench-dir%/sysjitter-get-runtime",
+                "src": "%bench-dir%/oslat-get-runtime",
                 "dest": "/usr/bin/"
             }
         ],
-        "runtime" : "sysjitter-get-runtime",
-        "start" : "sysjitter-start"
+        "runtime" : "oslat-get-runtime",
+        "start" : "oslat-start"
     }
 }

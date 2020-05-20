@@ -1,2 +1,2 @@
-# bench-sysjitter
-A benchmark subproject to facilitate the execution and post-processing of sysjitter
+# bench-oslat
+A benchmark subproject to facilitate the execution and post-processing of oslat
