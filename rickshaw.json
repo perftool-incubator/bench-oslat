@@ -1,7 +1,7 @@
 {
     "rickshaw-benchmark": {
         "schema": {
-            "version": "2020.04.14"
+            "version": "2020.05.18"
         }
     },
     "benchmark": "fio",
@@ -13,8 +13,13 @@
             {
                 "src": "%bench-dir%/sysjitter-start",
                 "dest": "/usr/bin/"
+            },
+            {
+                "src": "%bench-dir%/sysjitter-get-runtime",
+                "dest": "/usr/bin/"
             }
         ],
+        "runtime" : "sysjitter-get-runtime",
         "start" : "sysjitter-start"
     }
 }
