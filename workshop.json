@@ -8,23 +8,51 @@
         {
             "name": "default",
             "requirements": [
-                "sysjitter2_xzpeter_src"
+                "libtool",
+                "numactl_src",
+                "oslat_xzpeter_src"
             ]
         }
     ],
     "requirements": [
         {
-            "name": "sysjitter2_xzpeter_src",
+            "name": "libtool",
+            "type": "distro",
+            "distro_info": {
+                "packages": [ "libtool" ]
+            }
+        },
+        {
+            "name": "numactl_src",
             "type": "source",
             "source_info": {
-                "url": "https://github.com/xzpeter/sysjitter2/archive/master.tar.gz",
+                "url": "https://github.com/numactl/numactl/archive/v2.0.13.tar.gz",
+                "filename": "v2.0.13.tar.gz",
+                "commands": {
+                    "unpack": "tar -xzf v2.0.13.tar.gz",
+                    "get_dir": "tar -tzf v2.0.13.tar.gz | head -n 1",
+                    "commands": [
+                        "./autogen.sh",
+                        "./configure --prefix=/usr",
+                        "make",
+                        "make install",
+                        "ldconfig"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "oslat_xzpeter_src",
+            "type": "source",
+            "source_info": {
+                "url": "https://github.com/xzpeter/oslat/archive/master.tar.gz",
                 "filename": "master.tar.gz",
                 "commands": {
                     "unpack": "tar -xzf master.tar.gz",
                     "get_dir": "tar -tzf master.tar.gz | head -n 1",
                     "commands": [
                         "make",
-                        "/bin/cp -f sysjitter2 /usr/bin"
+                        "/bin/cp -f oslat /usr/bin"
                     ]
                 }
             }
