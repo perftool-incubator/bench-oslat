@@ -4,12 +4,16 @@
             "version": "2020.05.18"
         }
     },
-    "benchmark": "fio",
+    "benchmark": "oslat",
     "controller" : {
         "post-script" : "%bench-dir%/oslat-post-process"
     },
     "client" : {
         "files-from-controller": [
+            {
+                "src": "%bench-dir%/oslat-base",
+                "dest": "/usr/bin/"
+            },
             {
                 "src": "%bench-dir%/oslat-start",
                 "dest": "/usr/bin/"
