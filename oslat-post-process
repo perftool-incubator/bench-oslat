@@ -1,3 +1,75 @@
-#!/bin/bash
+#!/usr/bin/perl
+## -*- mode: perl; indent-tabs-mode: t; perl-indent-level: 4 -*-
+## vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=perl
 
-exit 0
+use strict;
+use warnings;
+use JSON::XS;
+use Data::Dumper;
+use Getopt::Long;
+
+my $ignore;
+
+GetOptions ("runtime=s" => \$ignore,
+            "rtprio=s" => \$ignore,
+            "no-load-balance" => \$ignore
+            );
+
+my @metrics;
+my %metric_types;
+my $primary_metric = 'polling-latency-usec';
+my %times;
+
+foreach my $i (qw(begin end)) {
+    my $file = $i . ".txt";
+    open(FH, $file) || die "Could not open " . $file;
+    $times{$i} = int (<FH> * 1000);
+    close FH;
+}
+
+
+
+my $result_file = "oslat-bin-stderrout.txt";
+if ( -e $result_file) {
+    open(FH, $result_file) || die "Could not open file " . $result_file;
+    while (<FH>) {
+        # Maximum: 13 18 5 4 5 18 17 12 8 7 4 19 5 4 19
+        if ( /Maximum:\s+(.*)$/ ) {
+            my @latencies = split(/\s+/, $1);
+            my $system_max_latency = $latencies[0];
+            for (my $i=1; $i<scalar(@latencies); $i++) {
+                if ($latencies[$i] > $system_max_latency) {
+                    $system_max_latency = $latencies[$i];
+                }
+            }
+            my %this_metric;
+            my %desc = ('source' => 'oslat',
+                        'type' => $primary_metric,
+                        'class' => 'count');
+            my %s = ('end' => $times{'end'},
+                     'begin' => $times{'begin'},
+                     'value' =>  int $system_max_latency);
+            $this_metric{'desc'} = \%desc;
+            push(@{ $this_metric{'data'} }, \%s);
+            push(@metrics, \%this_metric);
+        }
+    }
+    close(FH);
+}
+# Associate the metrics with a benchmark-period (in this case "measurement")
+my %sample;
+my @periods;
+my %period = ('name' => 'measurement');
+$sample{'rickshaw-bench-metric'}{'schema'}{'version'} = "2021.03.02";
+$period{'metrics'} = \@metrics;
+push(@periods, \%period);
+$sample{'periods'} = \@periods;
+$sample{'primary-period'} = 'measurement';
+$sample{'primary-metric'} = $primary_metric;
+if (scalar @metrics > 0) {
+    my $coder = JSON::XS->new;
+    open(JSON_FH, ">post-process-data.json") ||
+        die("Could not open file post-process-data.json for writing\n");
+    print JSON_FH $coder->encode(\%sample);
+    close JSON_FH;
+}

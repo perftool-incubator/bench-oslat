@@ -4,70 +4,28 @@
 exec >oslat-client-stderrout.txt
 exec 2>&1
 
-function convert_number_range() {
-        # converts a range of cpus, like "1-3,5" to a list, like "1,2,3,5"
-        local cpu_range=$1
-        local cpus_list=""
-        local cpus=""
-        for cpus in `echo "$cpu_range" | sed -e 's/,/ /g'`; do
-                if echo "$cpus" | grep -q -- "-"; then
-                        cpus=`echo $cpus | sed -e 's/-/ /'`
-                        cpus=`seq $cpus | sed -e 's/ /,/g'`
-                fi
-                for cpu in $cpus; do
-                        cpus_list="$cpus_list,$cpu"
-                done
-        done
-        cpus_list=`echo $cpus_list | sed -e 's/^,//'`
-        echo "$cpus_list"
-}
+. /usr/bin/oslat-base || (echo "/usr/bin/oslat-base not found"; exit 1)
 
-function disable_balance()
-{
-    local cpulist="$1"; shift
-	local cpu=""
-	local file=
-	local flags_cur=
-	for cpu in `echo ${cpulist} | sed -e 's/,/ /g'`; do
-		for file in $(find /proc/sys/kernel/sched_domain/cpu$cpu -name flags -print); do
-			flags_cur=$(cat $file)
-			flags_cur=$((flags_cur & 0xfffe))
-			echo $flags_cur > $file
-		done
-	done
-}
+dump_runtime
+validate_label
+validate_sw_prereqs
 
-function enable_balance()
-{
-    local cpulist="$1"; shift
-	local cpu=""
-	local file=
-	local flags_cur=
-	for cpu in `echo ${cpulist} | sed -e 's/,/ /g'`; do
-		for file in $(find /proc/sys/kernel/sched_domain/cpu$cpu -name flags -print); do
-			flags_cur=$(cat $file)
-			flags_cur=$((flags_cur | 0x1))
-			echo $flags_cur > $file
-		done
-	done
-}
-
-echo "args: $@"
-if [ -z "$RS_CS_LABEL" ]; then
-    echo "RS_CS_LABEL is not defined, exiting"
-    exit 1
+if [ -z "${WORKLOAD_CPUS}" ]; then
+    exit_error "WORKLOAD_CPUS is not defined.  This must be defined to run oslat"
 else
-    echo "RS_CS_LABEL: $RS_CS_LABEL"
+    echo "WORKLOAD_CPUS: ${WORKLOAD_CPUS}"
 fi
-echo "hostname: `hostname`"
+if [ -z "${HK_CPUS}" ]; then
+    exit_error "HK_CPUS is not defined.  This must be defined to run oslat"
+else
+    echo "HK_CPUS: ${HK_CPUS}"
+fi
 
 no_load_balance=0
 rtprio_opt=""
-max_cpus=""
-runtime=300
-cpu_range=`cat /proc/self/status | grep Cpus_allowed_list: | cut -f 2`
+runtime=60
 
-opts=$(getopt -q -o "" --longoptions "cpu-range:,no-load-balance:,rtprio:,runtime:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,runtime:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -91,11 +49,6 @@ while true; do
             runtime=$1
             shift;
             ;;
-        --cpu-range)
-            shift;
-            cpu_range=$1
-            shift;
-            ;;
         --)
             shift;
             break
@@ -106,32 +59,24 @@ while true; do
     esac
 done
 
-cpus=""
-cpus_list=""
-for cpus in `echo "$cpu_range" | sed -e 's/,/ /g'`; do
-        if echo "$cpus" | grep -q -- "-"; then
-                cpus=`echo $cpus | sed -e 's/-/ /'`
-                cpus=`seq $cpus | sed -e 's/ /,/g'`
-        fi
-        for cpu in $cpus; do
-                cpus_list="$cpus_list,$cpu"
-        done
-done
-cpus_list=`echo $cpus_list | sed -e s/^,//`
-
 if [ "$no_load_balance" == "1" ]; then
      disable_balance $cpus_list
 fi
 
-master_cpu=`echo $cpus_list | awk -F, '{print $1}'`
-worker_cpus=`echo $cpus_list | sed -e s/^$master_cpu,//`
+# get the first CPU from HK_CPUS to use as the oslat main thread
+cpu_main_thread=$(echo ${HK_CPUS} | awk -F, '{ print $1 }')
 
-cmd="oslat --runtime $runtime $rtprio_opt --cpu-list $worker_cpus"
-echo "Going to execute $cmd"
-$cmd
+cmd="taskset -c ${HK_CPUS} oslat --runtime ${runtime} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread}"
+echo "About to run: $cmd"
+date +%s.%N >begin.txt
+$cmd >oslat-bin-stderrout.txt 2>&1
 rc=$?
+date +%s.%N >end.txt
 
 if [ "$no_load_balance" == "1" ]; then
      enable_balance $cpus_list
 fi
-exit $rc
+
+if [ $rc -gt 0 ]; then
+    exit_error "`cat oslat-bin-stderrout.txt`"
+fi
