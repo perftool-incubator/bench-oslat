@@ -24,8 +24,9 @@ fi
 no_load_balance=0
 rtprio_opt=""
 runtime=60
+smt="on"
 
-opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,runtime:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,runtime:,smt:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -49,6 +50,11 @@ while true; do
             runtime=$1
             shift;
             ;;
+	--smt)
+	    shift
+	    smt=$1
+	    shift
+	    ;;	   
         --)
             shift;
             break
@@ -62,6 +68,29 @@ done
 if [ "$no_load_balance" == "1" ]; then
      disable_balance $cpus_list
 fi
+
+# adjust CPUs to use
+cpu_str=""
+for cpu in $(echo $WORKLOAD_CPUS | sed -e "s/,/ /g"); do
+    cpu_str+=" --cpu $cpu"
+done
+cmd="${TOOLBOX_HOME}/bin/get-cpus-ordered.py --smt ${smt} ${cpu_str}"
+echo "about to run: ${cmd}"
+CMD_OUTPUT=$(${cmd})
+echo -e "${CMD_OUTPUT}"
+WORKLOAD_CPUS=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
+echo "WORLOAD_CPUS: ${WORKLOAD_CPUS}"
+
+cpu_str=""
+for cpu in $(echo $HK_CPUS | sed -e "s/,/ /g"); do
+    cpu_str+=" --cpu $cpu"
+done
+cmd="${TOOLBOX_HOME}/bin/get-cpus-ordered.py --smt ${smt} ${cpu_str}"
+echo "about to run: ${cmd}"
+CMD_OUTPUT=$(${cmd})
+echo -e "${CMD_OUTPUT}"
+HK_CPUS=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
+echo "HK_CPUS: ${HK_CPUS}"
 
 # get the first CPU from HK_CPUS to use as the oslat main thread
 cpu_main_thread=$(echo ${HK_CPUS} | awk -F, '{ print $1 }')
