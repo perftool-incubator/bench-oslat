@@ -12,7 +12,8 @@ my $ignore;
 
 GetOptions ("runtime=s" => \$ignore,
             "rtprio=s" => \$ignore,
-            "no-load-balance" => \$ignore
+            "no-load-balance" => \$ignore,
+	    "smt=s" => \$ignore,
             );
 
 my @metrics;
