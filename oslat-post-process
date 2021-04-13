@@ -8,18 +8,29 @@ use JSON::XS;
 use Data::Dumper;
 use Getopt::Long;
 
-my $ignore;
+BEGIN {
+    if (!(exists $ENV{'TOOLBOX_HOME'} && -d "$ENV{'TOOLBOX_HOME'}/perl")) {
+    print "This script requires libraries that are provided by the toolbox project.\n";
+    print "Toolbox can be acquired from https://github.com/perftool-incubator/toolbox and\n";
+    print "then use 'export TOOLBOX_HOME=/path/to/toolbox' so that it can be located.\n";
+    exit 1;
+    }
+}
+use lib "$ENV{'TOOLBOX_HOME'}/perl";
+use toolbox::json;
+use toolbox::cpu;
+use toolbox::metrics;
 
+my $ignore;
 GetOptions ("runtime=s" => \$ignore,
             "rtprio=s" => \$ignore,
             "no-load-balance" => \$ignore,
-	    "smt=s" => \$ignore,
+            "smt=s" => \$ignore,
             );
 
-my @metrics;
-my %metric_types;
 my $primary_metric = 'polling-latency-usec';
 my %times;
+my $metric_data_name;
 
 foreach my $i (qw(begin end)) {
     my $file = $i . ".txt";
@@ -28,49 +39,43 @@ foreach my $i (qw(begin end)) {
     close FH;
 }
 
-
-
 my $result_file = "oslat-bin-stderrout.txt";
 if ( -e $result_file) {
     open(FH, $result_file) || die "Could not open file " . $result_file;
     while (<FH>) {
-        # Maximum: 13 18 5 4 5 18 17 12 8 7 4 19 5 4 19
-        if ( /Maximum:\s+(.*)$/ ) {
+        #      Maximum:	 75 48 75 48 75 48 75 48 76 51 75 52 75 47 75 48 75 48 75 48 76 47 75 47 75 48 75 48 76 47 75 48 75 48 75 48 75 47 75 48 76 48 75 47 75 48 75 48 75 48 75 48 76 48 75 48 75 48 75 48 75 48 75 48 (us)
+        if ( /Maximum:\s+(.*)\(us\)$/ ) {
             my @latencies = split(/\s+/, $1);
             my $system_max_latency = $latencies[0];
-            for (my $i=1; $i<scalar(@latencies); $i++) {
+            for (my $i = 1; $i < scalar(@latencies); $i++) {
                 if ($latencies[$i] > $system_max_latency) {
                     $system_max_latency = $latencies[$i];
                 }
             }
-            my %this_metric;
-            my %desc = ('source' => 'oslat',
-                        'type' => $primary_metric,
-                        'class' => 'count');
-            my %s = ('end' => $times{'end'},
-                     'begin' => $times{'begin'},
-                     'value' =>  int $system_max_latency);
-            $this_metric{'desc'} = \%desc;
-            push(@{ $this_metric{'data'} }, \%s);
-            push(@metrics, \%this_metric);
+            my %desc = ('source' => 'oslat', 'type' => $primary_metric, 'class' => 'count');
+            my %names = ();
+            my %sample = ('begin' => $times{'begin'}, 'end' => $times{'end'}, 'value' => int $system_max_latency);
+            log_sample("0", \%desc, \%names, \%sample);
         }
     }
+    $metric_data_name = finish_samples();
     close(FH);
 }
 # Associate the metrics with a benchmark-period (in this case "measurement")
 my %sample;
+my @metric_files = ( $metric_data_name );
 my @periods;
 my %period = ('name' => 'measurement');
 $sample{'rickshaw-bench-metric'}{'schema'}{'version'} = "2021.03.02";
-$period{'metrics'} = \@metrics;
+$period{'metric-files'} = \@metric_files;
 push(@periods, \%period);
 $sample{'periods'} = \@periods;
 $sample{'primary-period'} = 'measurement';
 $sample{'primary-metric'} = $primary_metric;
-if (scalar @metrics > 0) {
-    my $coder = JSON::XS->new;
-    open(JSON_FH, ">post-process-data.json") ||
-        die("Could not open file post-process-data.json for writing\n");
-    print JSON_FH $coder->encode(\%sample);
-    close JSON_FH;
-}
+$sample{'begin'} = $times{'begin'};
+$sample{'end'} = $times{'end'};
+my $coder = JSON::XS->new;
+open(JSON_FH, ">post-process-data.json") ||
+    die("Could not open file post-process-data.json for writing\n");
+print JSON_FH $coder->encode(\%sample);
+close JSON_FH;
