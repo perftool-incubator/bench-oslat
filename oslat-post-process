@@ -66,14 +66,12 @@ my %sample;
 my @metric_files = ( $metric_data_name );
 my @periods;
 my %period = ('name' => 'measurement');
-$sample{'rickshaw-bench-metric'}{'schema'}{'version'} = "2021.03.02";
+$sample{'rickshaw-bench-metric'}{'schema'}{'version'} = "2021.04.12";
 $period{'metric-files'} = \@metric_files;
 push(@periods, \%period);
 $sample{'periods'} = \@periods;
 $sample{'primary-period'} = 'measurement';
 $sample{'primary-metric'} = $primary_metric;
-$sample{'begin'} = $times{'begin'};
-$sample{'end'} = $times{'end'};
 my $coder = JSON::XS->new;
 open(JSON_FH, ">post-process-data.json") ||
     die("Could not open file post-process-data.json for writing\n");
