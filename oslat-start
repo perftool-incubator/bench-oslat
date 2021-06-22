@@ -23,10 +23,10 @@ fi
 
 no_load_balance=0
 rtprio_opt=""
-runtime=60
+duration=60
 smt="on"
 
-opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,runtime:,smt:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,duration:,smt:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -45,9 +45,9 @@ while true; do
             rtprio_opt="--rtprio $1"
             shift;
             ;;
-        --runtime)
+        --duration)
             shift;
-            runtime=$1
+            duration=$1
             shift;
             ;;
 	--smt)
@@ -95,7 +95,17 @@ echo "HK_CPUS: ${HK_CPUS}"
 # get the first CPU from HK_CPUS to use as the oslat main thread
 cpu_main_thread=$(echo ${HK_CPUS} | awk -F, '{ print $1 }')
 
-cmd="taskset -c ${HK_CPUS} oslat --runtime ${runtime} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread}"
+echo
+cmd="oslat --help"
+echo "About to run: $cmd"
+$cmd
+echo
+cmd="oslat --version"
+echo "About to run: $cmd"
+$cmd
+echo
+
+cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread}"
 echo "About to run: $cmd"
 date +%s.%N >begin.txt
 $cmd >oslat-bin-stderrout.txt 2>&1
