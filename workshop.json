@@ -10,7 +10,7 @@
             "requirements": [
                 "libtool",
                 "numactl_src",
-                "oslat_xzpeter_src"
+                "rttests_src"
             ]
         }
     ],
@@ -19,7 +19,9 @@
             "name": "libtool",
             "type": "distro",
             "distro_info": {
-                "packages": [ "libtool" ]
+                "packages": [
+		    "libtool"
+		]
             }
         },
         {
@@ -41,21 +43,18 @@
                 }
             }
         },
-        {
-            "name": "oslat_xzpeter_src",
-            "type": "source",
-            "source_info": {
-                "url": "https://github.com/xzpeter/oslat/archive/master.tar.gz",
-                "filename": "master.tar.gz",
-                "commands": {
-                    "unpack": "tar -xzf master.tar.gz",
-                    "get_dir": "tar -tzf master.tar.gz | head -n 1",
-                    "commands": [
-                        "make",
-                        "/bin/cp -f oslat /usr/bin"
-                    ]
-                }
-            }
-        }
+	{
+	    "name": "rttests_src",
+	    "type": "manual",
+	    "manual_info": {
+		"commands": [
+		    "git clone git://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git /root/rt-tests",
+		    "cd /root/rt-tests; git checkout unstable/devel/latest",
+		    "cd /root/rt-tests; make",
+		    "cd /root/rt-tests; make install",
+		    "ldconfig"
+		]
+	    }
+	}
     ]
 }

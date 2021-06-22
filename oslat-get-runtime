@@ -3,14 +3,14 @@
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
 
 # Only output the runtime in seconds
-runtime=60
-opts=$(getopt -q -o "" --longoptions "runtime:" -n "getopt.sh" -- "$@");
+duration=60
+opts=$(getopt -q -o "" --longoptions "duration:" -n "getopt.sh" -- "$@");
 eval set -- "$opts";
 while true; do
     case "$1" in
-        --runtime)
+        --duration)
             shift
-            runtime=$1
+            duration=$1
             shift
             ;;
         --)
@@ -22,4 +22,4 @@ while true; do
             ;;
     esac
 done
-echo $runtime
+echo $duration
