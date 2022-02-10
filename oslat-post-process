@@ -32,11 +32,17 @@ my $primary_metric = 'polling-latency-usec';
 my %times;
 my $metric_data_name;
 
-foreach my $i (qw(begin end)) {
-    my $file = $i . ".txt";
-    open(FH, $file) || die "Could not open " . $file;
-    $times{$i} = int (<FH> * 1000);
-    close FH;
+if (-e "begin.txt" && -e "end.txt") {
+    foreach my $i (qw(begin end)) {
+        my $file = $i . ".txt";
+        open(FH, $file) || die "Could not open " . $file;
+        $times{$i} = int (<FH> * 1000);
+        close FH;
+    }
+} else {
+    printf "oslat-post-process(): could not find begin.txt and/or end.txt\n";
+    printf "Is the current directory for the oslat server (no result file)?\n";
+    exit 0;
 }
 
 my $result_file = "oslat-bin-stderrout.txt";

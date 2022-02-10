@@ -10,7 +10,8 @@
             "requirements": [
                 "libtool",
                 "numactl_src",
-                "rttests_src"
+                "rttests_src",
+		"stress-ng_src"
             ]
         }
     ],
@@ -53,6 +54,23 @@
 		    "cd /root/rt-tests; make install",
 		    "ldconfig"
 		]
+	    }
+	},
+	{
+	    "name": "stress-ng_src",
+	    "type": "source",
+	    "source_info": {
+		"url": "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.12.08.tar.gz",
+		"filename": "stress-ng-0.12.08.tar.gz",
+		"commands": {
+		    "unpack": "tar -xzf stress-ng-0.12.08.tar.gz",
+		    "get_dir": "tar -tzf stress-ng-0.12.08.tar.gz  | head -n 1",
+		    "commands": [
+			"make",
+			"make install",
+			"ldconfig"
+		    ]
+		}
 	    }
 	}
     ]

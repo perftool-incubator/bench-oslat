@@ -15,7 +15,7 @@
                 "dest": "/usr/bin/"
             },
             {
-                "src": "%bench-dir%/oslat-start",
+                "src": "%bench-dir%/oslat-client",
                 "dest": "/usr/bin/"
             },
             {
@@ -24,6 +24,25 @@
             }
         ],
         "runtime" : "oslat-get-runtime",
-        "start" : "oslat-start"
+        "start" : "oslat-client"
+    },
+    "server": {
+	"required": false,
+	"files-from-controller": [
+            {
+                "src": "%bench-dir%/oslat-base",
+                "dest": "/usr/bin/"
+            },
+            {
+                "src": "%bench-dir%/oslat-server-start",
+                "dest": "/usr/bin/"
+            },
+            {
+                "src": "%bench-dir%/oslat-server-stop",
+                "dest": "/usr/bin/"
+            }
+	],
+	"start": "oslat-server-start",
+	"stop": "oslat-server-stop"
     }
 }
