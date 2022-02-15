@@ -105,12 +105,16 @@ echo "About to run: $cmd"
 $cmd
 echo
 
+validate_clocksource
+
 cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread}"
 echo "About to run: $cmd"
 date +%s.%N >begin.txt
 $cmd >oslat-bin-stderrout.txt 2>&1
 rc=$?
 date +%s.%N >end.txt
+
+validate_clocksource
 
 if [ "$no_load_balance" == "1" ]; then
      enable_balance $cpus_list
