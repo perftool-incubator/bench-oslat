@@ -33,28 +33,20 @@ echo "CPUS: ${CPUS}"
 
 NUM_CPUS=$(echo "${CPUS}" | sed -e "s/,/ /g" | wc -w)
 echo "NUM_CPUS=${NUM_CPUS}"
-
-NUM_TESTS=9
-TEST_COPIES=1
-if [ ${NUM_CPUS} -gt ${NUM_TESTS} ]; then
-    while [ $(( NUM_TESTS*TEST_COPIES )) -lt ${NUM_CPUS} ]; do
-        (( TEST_COPIES += 1 ))
-    done
-fi
-
-echo "TEST_COPIES: ${TEST_COPIES}"
+TEST_TILES=${NUM_CPUS}
+echo "TEST_TILES: ${TEST_TILES}"
 
 CMD="taskset -c ${CPUS} \
      	         stress-ng \
-		 --cpu ${TEST_COPIES} \
-		 --hdd ${TEST_COPIES} \
-        	 --io ${TEST_COPIES} \
-		 --malloc ${TEST_COPIES} \
-		 --mmap ${TEST_COPIES} \
-		 --msg ${TEST_COPIES} \
-		 --stream ${TEST_COPIES} \
-		 --sysinfo ${TEST_COPIES} \
-		 --vm ${TEST_COPIES} \
+		 --cpu ${TEST_TILES} \
+		 --hdd ${TEST_TILES} \
+        	 --io ${TEST_TILES} \
+		 --malloc ${TEST_TILES} \
+		 --mmap ${TEST_TILES} \
+		 --msg ${TEST_TILES} \
+		 --stream ${TEST_TILES} \
+		 --sysinfo ${TEST_TILES} \
+		 --vm ${TEST_TILES} \
 		 --timeout 0 \
 		 --metrics \
 		 --times \
