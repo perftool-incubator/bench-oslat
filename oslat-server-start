@@ -36,21 +36,22 @@ echo "NUM_CPUS=${NUM_CPUS}"
 TEST_TILES=${NUM_CPUS}
 echo "TEST_TILES: ${TEST_TILES}"
 
-CMD="taskset -c ${CPUS} \
-     	         stress-ng \
-		 --cpu ${TEST_TILES} \
-		 --hdd ${TEST_TILES} \
-        	 --io ${TEST_TILES} \
-		 --malloc ${TEST_TILES} \
-		 --mmap ${TEST_TILES} \
-		 --msg ${TEST_TILES} \
-		 --stream ${TEST_TILES} \
-		 --sysinfo ${TEST_TILES} \
-		 --vm ${TEST_TILES} \
-		 --timeout 0 \
-		 --metrics \
-		 --times \
-		 --verbose"
+CMD="taskset -c ${CPUS}"
+CMD+=" stress-ng"
+CMD+=" --cpu ${TEST_TILES}"
+CMD+=" --hdd ${TEST_TILES}"
+CMD+=" --io ${TEST_TILES}"
+CMD+=" --malloc ${TEST_TILES}"
+CMD+=" --mmap ${TEST_TILES}"
+CMD+=" --msg ${TEST_TILES}"
+CMD+=" --stream ${TEST_TILES}"
+CMD+=" --sysinfo ${TEST_TILES}"
+CMD+=" --vm ${TEST_TILES}"
+CMD+=" --timeout 0"
+CMD+=" --metrics"
+CMD+=" --times"
+CMD+=" --verbose"
+
 echo "About to run: ${CMD}"
 ${CMD} > stress-ng.out 2>&1 &
 pid=$!
