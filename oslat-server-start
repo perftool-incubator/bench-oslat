@@ -7,6 +7,31 @@ exec 2>&1
 
 . /usr/bin/oslat-base || (echo "/usr/bin/oslat-base not found"; exit 1)
 
+STRESS_NG_TILES_PER_CPU=1
+
+opts=$(getopt -q -o "" --longoptions "stress-ng-tiles-per-cpu:" -n "getopt.sh" -- "$@");
+if [ $? -ne 0 ]; then
+    printf -- "\tUnrecognized option specified\n\n"
+    exit 1
+fi
+eval set -- "$opts";
+while true; do
+    case "$1" in
+	--stress-ng-tiles-per-cpu)
+	    shift;
+	    STRESS_NG_TILES_PER_CPU=$1
+	    shift;
+	    ;;
+        --)
+            shift;
+            break
+            ;;
+        *)
+            echo "Invalid option: $1"
+            exit 1
+    esac
+done
+
 if [ -z "$HK_CPUS" ]; then
     TMP_CPUS=$(grep Cpus_allowed_list /proc/self/status | awk '{ print $2 }')
     echo "CPUs Allowed List: ${TMP_CPUS}"
@@ -31,11 +56,12 @@ else
     CPUS="${HK_CPUS}"
 fi
 
+echo "STRESS_NG_TILES_PER_CPU=${STRESS_NG_TILES_PER_CPU}"
 echo "CPUS: ${CPUS}"
 
 NUM_CPUS=$(echo "${CPUS}" | sed -e "s/,/ /g" | wc -w)
 echo "NUM_CPUS=${NUM_CPUS}"
-TEST_TILES=${NUM_CPUS}
+TEST_TILES=$(( ${NUM_CPUS} * ${STRESS_NG_TILES_PER_CPU} ))
 echo "TEST_TILES: ${TEST_TILES}"
 
 CMD="taskset -c ${CPUS}"
