@@ -8,8 +8,9 @@
         {
             "name": "default",
             "requirements": [
-                "libtool",
+                "deps",
                 "numactl_src",
+		"rttests_patches",
                 "rttests_src",
 		"stress-ng_src"
             ]
@@ -17,11 +18,12 @@
     ],
     "requirements": [
         {
-            "name": "libtool",
+            "name": "deps",
             "type": "distro",
             "distro_info": {
                 "packages": [
-		    "libtool"
+		    "libtool",
+		    "patch"
 		]
             }
         },
@@ -44,12 +46,25 @@
             }
         },
 	{
+	    "name": "rttests_patches",
+	    "type": "files",
+	    "files_info": {
+		"files": [
+		    {
+			"src": "%bench-dir%/oslat-trace-updates.patch",
+			"dst": "/root"
+		    }
+		]
+	    }
+	},
+	{
 	    "name": "rttests_src",
 	    "type": "manual",
 	    "manual_info": {
 		"commands": [
 		    "git clone git://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git /root/rt-tests",
 		    "cd /root/rt-tests; git checkout unstable/devel/latest",
+		    "cd /root/rt-tests; patch -p1 < /root/oslat-trace-updates.patch",
 		    "cd /root/rt-tests; make",
 		    "cd /root/rt-tests; make install",
 		    "ldconfig"

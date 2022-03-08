@@ -1,6 +1,6 @@
 #!/bin/bash
-# vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 # -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4 -*-
+# vim: autoindent tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=bash
 exec >oslat-client-stderrout.txt
 exec 2>&1
 
@@ -25,8 +25,10 @@ no_load_balance=0
 rtprio_opt=""
 duration=60
 smt="on"
+trace_markers=0
+trace_control=0
 
-opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,duration:,smt:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,duration:,smt:,trace-markers:,trace-control:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -34,6 +36,16 @@ fi
 eval set -- "$opts";
 while true; do
     case "$1" in
+	--trace-control)
+	    shift;
+	    trace_control=$1
+	    shift;
+	    ;;
+	--trace-markers)
+	    shift;
+	    trace_markers=$1
+	    shift;
+	    ;;
         --no-load-balance)
             shift;
             no_load_balance=$1
@@ -105,9 +117,17 @@ echo "About to run: $cmd"
 $cmd
 echo
 
+trace_args=""
+if [ "${trace_markers}" == "1" ]; then
+    trace_args+=" --trace-markers "
+fi
+if [ "${trace_control}" == "1" ]; then
+    trace_args+=" --trace-control "
+fi
+
 validate_clocksource
 
-cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread}"
+cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread} ${trace_args}"
 echo "About to run: $cmd"
 date +%s.%N >begin.txt
 $cmd >oslat-bin-stderrout.txt 2>&1
