@@ -1,0 +1,297 @@
+diff --git a/Makefile b/Makefile
+index b17ac09..c1d62b1 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,4 +1,4 @@
+-VERSION = 1.10
++VERSION = 1.11
+ CC = $(CROSS_COMPILE)gcc
+ AR = $(CROSS_COMPILE)ar
+ 
+diff --git a/src/cyclictest/cyclictest.c b/src/cyclictest/cyclictest.c
+index be8285a..360103e 100644
+--- a/src/cyclictest/cyclictest.c
++++ b/src/cyclictest/cyclictest.c
+@@ -723,8 +723,8 @@ static void *timerthread(void *param)
+ 			pthread_mutex_lock(&break_thread_id_lock);
+ 			if (break_thread_id == 0) {
+ 				break_thread_id = stat->tid;
+-				tracemark("hit latency threshold (%llu > %d)",
+-					  (unsigned long long) diff, tracelimit);
++				tracemark_break("hit latency threshold (%llu > %d)",
++						(unsigned long long) diff, tracelimit);
+ 				break_thread_value = diff;
+ 			}
+ 			pthread_mutex_unlock(&break_thread_id_lock);
+diff --git a/src/include/rt-utils.h b/src/include/rt-utils.h
+index f07b57d..69a6bb4 100644
+--- a/src/include/rt-utils.h
++++ b/src/include/rt-utils.h
+@@ -32,6 +32,9 @@ int parse_mem_string(char *str, uint64_t *val);
+ 
+ void enable_trace_mark(void);
+ void tracemark(char *fmt, ...) __attribute__((format(printf, 1, 2)));
++void tracemark_break(char *fmt, ...) __attribute__((format(printf, 1, 2)));
++void tracing_on(void);
++void tracing_off(void);
+ void disable_trace_mark(void);
+ 
+ #define MSEC_PER_SEC		1000
+diff --git a/src/lib/rt-utils.c b/src/lib/rt-utils.c
+index d264c34..6a0a18f 100644
+--- a/src/lib/rt-utils.c
++++ b/src/lib/rt-utils.c
+@@ -409,8 +409,7 @@ static void open_tracemark_fd(void)
+ 	 */
+ 	if (tracemark_fd < 0) {
+ 		sprintf(path, "%s/%s", fileprefix, "trace_marker");
+-		tracemark_fd = open(path, O_WRONLY);
+-		if (tracemark_fd < 0) {
++		if ((tracemark_fd = open(path, O_WRONLY)) < 0) {
+ 			warn("unable to open trace_marker file: %s\n", path);
+ 			return;
+ 		}
+@@ -458,25 +457,85 @@ static void debugfs_prepare(void)
+ 		     "debug fs not mounted");
+ }
+ 
++void tracing_on(void)
++{
++	ssize_t bytes_written;
++
++	if (trace_fd < 0) {
++		warn("tracing_on(): File descriptors not ready\n");
++		return;
++	}
++
++	/* start tracing */
++	bytes_written = write(trace_fd, "1\n", 2);
++	if (bytes_written == -1)
++		warn("tracing_on(): Failed to start tracing (%s)\n", strerror(errno));
++}
++
++void tracing_off(void)
++{
++	ssize_t bytes_written;
++
++	if (trace_fd < 0) {
++		warn("tracing_off(): File descriptors not ready\n");
++		return;
++	}
++
++	/* stop tracing */
++	bytes_written = write(trace_fd, "0\n", 2);
++	if (bytes_written == -1)
++		warn("tracing_off(): Failed to stop tracing (%s)\n", strerror(errno));
++}
++
+ void tracemark(char *fmt, ...)
+ {
+ 	va_list ap;
+ 	int len;
++	ssize_t bytes_written;
+ 
+ 	/* bail out if we're not tracing */
+ 	/* or if the kernel doesn't support trace_mark */
+-	if (tracemark_fd < 0 || trace_fd < 0)
++	if (tracemark_fd < 0 || trace_fd < 0) {
++		warn("tracemark(): File descriptors not ready\n");
+ 		return;
++	}
+ 
+ 	va_start(ap, fmt);
+ 	len = vsnprintf(tracebuf, TRACEBUFSIZ, fmt, ap);
+ 	va_end(ap);
+ 
+ 	/* write the tracemark message */
+-	write(tracemark_fd, tracebuf, len);
++	bytes_written = write(tracemark_fd, tracebuf, len);
++	if (bytes_written == -1)
++		warn("tracemark(): Failed to write tracemark (%s) (%s)\n", tracebuf, strerror(errno));
++}
++
++void tracemark_break(char *fmt, ...)
++{
++	va_list ap;
++	int len;
++	ssize_t bytes_written;
++
++	/* bail out if we're not tracing */
++	/* or if the kernel doesn't support trace_mark */
++	if (tracemark_fd < 0 || trace_fd < 0) {
++		warn("tracemark_break(): File descriptors not ready\n");
++		return;
++	}
++
++	va_start(ap, fmt);
++	len = vsnprintf(tracebuf, TRACEBUFSIZ, fmt, ap);
++	va_end(ap);
+ 
+-	/* now stop any trace */
+-	write(trace_fd, "0\n", 2);
++	/* write the tracemark message */
++	bytes_written = write(tracemark_fd, tracebuf, len);
++	if (bytes_written == -1)
++		warn("tracemark_break(): Failed to write tracemark (%s) (%s)\n", tracebuf, strerror(errno));
++
++	/* stop tracing */
++	bytes_written = write(trace_fd, "0\n", 2);
++	if (bytes_written == -1)
++		warn("tracemark_break(): Failed to stop tracing (%s)\n", strerror(errno));
+ }
+ 
+ void enable_trace_mark(void)
+diff --git a/src/oslat/oslat.c b/src/oslat/oslat.c
+index 32de951..0c66e17 100644
+--- a/src/oslat/oslat.c
++++ b/src/oslat/oslat.c
+@@ -172,6 +172,9 @@ struct global {
+ 	int                   enable_bias;
+ 	uint64_t              bias;
+ 	int                   quiet;
++	int                   trace_control;
++	int                   trace_markers;
++	int                   measurement;
+ 	int                   single_preheat_thread;
+ 	int                   output_omit_zero_buckets;
+ 	char                  jsonfile[MAX_PATH];
+@@ -303,7 +306,7 @@ static void insert_bucket(struct thread *t, stamp_t value)
+ 	if (g.trace_threshold && us >= g.trace_threshold) {
+ 		char *line = "%s: Trace threshold (%d us) triggered with %u us!\n"
+ 		    "Stopping the test.\n";
+-		tracemark(line, g.app_name, g.trace_threshold, us);
++		tracemark_break(line, g.app_name, g.trace_threshold, us);
+ 		err_quit(line, g.app_name, g.trace_threshold, us);
+ 	}
+ 
+@@ -352,7 +355,12 @@ static void doit(struct thread *t)
+ {
+ 	stamp_t ts1, ts2;
+ 	workload_fn workload_fn = g.workload->w_fn;
++	char *start_line = "%s: CPU %d: Starting critical section";
++	char *stop_line = "%s: CPU %d: Stopping critical section";
+ 
++	if (g.measurement && g.trace_markers) {
++		tracemark(start_line, g.app_name, t->core_i);
++	}
+ 	frc(&ts2);
+ 	do {
+ 		workload_fn(t->dst_buf, t->src_buf, g.workload_mem_size);
+@@ -360,6 +368,9 @@ static void doit(struct thread *t)
+ 		insert_bucket(t, ts1 - ts2);
+ 		ts2 = ts1;
+ 	} while (g.cmd == GO);
++	if (g.measurement && g.trace_markers) {
++		tracemark(stop_line, g.app_name, t->core_i);
++	}
+ }
+ 
+ static int set_fifo_prio(int prio)
+@@ -533,6 +544,10 @@ static void run_expt(struct thread *threads, int runtime_secs)
+ 		usleep(1000);
+ 
+ 	gettimeofday(&g.tv_start, NULL);
++	if (g.measurement && g.trace_control) {
++		printf("Starting tracing\n");
++		tracing_on();
++	}
+ 	g.cmd = GO;
+ 
+ 	alarm(runtime_secs);
+@@ -540,6 +555,11 @@ static void run_expt(struct thread *threads, int runtime_secs)
+ 	/* Go to sleep until the threads have done their stuff. */
+ 	for (i = 0; i < g.n_threads; ++i)
+ 		pthread_join(threads[i].thread_id, NULL);
++
++	if (g.measurement && g.trace_control) {
++		printf("Stopping tracing\n");
++		tracing_off();
++	}
+ }
+ 
+ static void handle_alarm(int code)
+@@ -573,6 +593,9 @@ static void usage(int error)
+ 	       "                       to lock the freq then please don't use this parameter.\n"
+ 	       "-T, --trace-threshold  Stop the test when threshold triggered (in us),\n"
+ 	       "                       print a marker in ftrace and stop ftrace too.\n"
++	       "    --trace-control    Start and stop ftrace before and after the measurement.\n"
++	       "    --trace-markers    Write per thread trace markers around the measurement critical\n"
++	       "                       section.\n"
+ 	       "-v, --version          Display the version of the software.\n"
+ 	       "-w, --workload         Specify a kind of workload, default is no workload\n"
+ 	       "                       (options: no, memmove)\n"
+@@ -600,7 +623,7 @@ enum option_value {
+ 	OPT_DURATION, OPT_JSON, OPT_RT_PRIO, OPT_HELP, OPT_TRACE_TH,
+ 	OPT_WORKLOAD, OPT_WORKLOAD_MEM, OPT_BIAS,
+ 	OPT_QUIET, OPT_SINGLE_PREHEAT, OPT_ZERO_OMIT,
+-	OPT_VERSION
++	OPT_VERSION, OPT_TRACE_CONTROL, OPT_TRACE_MARKERS
+ };
+ 
+ /* Process commandline options */
+@@ -617,6 +640,8 @@ static void parse_options(int argc, char *argv[])
+ 			{ "rtprio",	required_argument,	NULL, OPT_RT_PRIO },
+ 			{ "help",	no_argument,		NULL, OPT_HELP },
+ 			{ "trace-threshold", required_argument,	NULL, OPT_TRACE_TH },
++			{ "trace-control", no_argument,         NULL, OPT_TRACE_CONTROL },
++			{ "trace-markers", no_argument,         NULL, OPT_TRACE_MARKERS },
+ 			{ "workload",	required_argument,	NULL, OPT_WORKLOAD },
+ 			{ "workload-mem", required_argument,	NULL, OPT_WORKLOAD_MEM },
+ 			{ "bias",	no_argument,		NULL, OPT_BIAS },
+@@ -689,6 +714,16 @@ static void parse_options(int argc, char *argv[])
+ 			}
+ 			enable_trace_mark();
+ 			break;
++		case OPT_TRACE_CONTROL:
++			printf("Enabling trace control\n");
++			g.trace_control = 1;
++			enable_trace_mark();
++			break;
++		case OPT_TRACE_MARKERS:
++			printf("Enabling trace markers\n");
++			g.trace_markers = 1;
++			enable_trace_mark();
++			break;
+ 		case OPT_WORKLOAD:
+ 		case 'w':
+ 			if (workload_select(optarg)) {
+@@ -783,6 +818,7 @@ static void record_bias(struct thread *t)
+ int main(int argc, char *argv[])
+ {
+ 	struct thread *threads;
++	struct timeval tvs, tve;
+ 	int i, n_cores;
+ 	struct bitmask *cpu_set = NULL;
+ 
+@@ -800,6 +836,9 @@ int main(int argc, char *argv[])
+ 
+ 	g.app_name = argv[0];
+ 	g.rtprio = 0;
++	g.trace_control = 0;
++	g.trace_markers = 0;
++	g.measurement = 0;
+ 	g.bucket_size = BUCKET_SIZE;
+ 	g.runtime = 1;
+ 	g.workload = &workload_list[WORKLOAD_DEFAULT];
+@@ -850,15 +889,19 @@ int main(int argc, char *argv[])
+ 	run_expt(threads, 1);
+ 	record_bias(threads);
+ 
++	gettimeofday(&tvs, NULL);
+ 	if (!g.quiet)
+-		printf("Test starts...\n");
++		printf("Test started at %f\n", tvs.tv_sec + tvs.tv_usec / 1e6);
++
+ 	/* Reset n_threads to always run on all the cores */
+ 	g.n_threads = g.n_threads_total;
++	g.measurement = 1;
+ 	rt_test_start();
+ 	run_expt(threads, g.runtime);
+ 
++	gettimeofday(&tve, NULL);
+ 	if (!g.quiet)
+-		printf("Test completed.\n\n");
++		printf("Test completed at %f\n\n", tve.tv_sec + tve.tv_usec / 1e6);
+ 
+ 	write_summary(threads);
+ 
