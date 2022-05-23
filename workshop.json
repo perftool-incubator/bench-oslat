@@ -71,22 +71,17 @@
 		]
 	    }
 	},
-	{
-	    "name": "stress-ng_src",
-	    "type": "source",
-	    "source_info": {
-		"url": "https://github.com/ColinIanKing/stress-ng/archive/refs/tags/V0.12.08.tar.gz",
-		"filename": "stress-ng-0.12.08.tar.gz",
-		"commands": {
-		    "unpack": "tar -xzf stress-ng-0.12.08.tar.gz",
-		    "get_dir": "tar -tzf stress-ng-0.12.08.tar.gz  | head -n 1",
-		    "commands": [
-			"make",
-			"make install",
-			"ldconfig"
-		    ]
-		}
-	    }
-	}
+    {
+        "name": "stress-ng_src",
+        "type": "manual",
+        "manual_info": {
+            "commands": [
+                "git clone https://github.com/ColinIanKing/stress-ng.git /root/stress-ng",
+                "cd /root/stress-ng",
+                "cd /root/stress-ng; git checkout 53f4f41eb7cf62302e883f87a114ec029d43595b",
+                "cd /root/stress-ng; make clean && make && make install && ldconfig"
+            ]
+        }
+    }
     ]
 }
