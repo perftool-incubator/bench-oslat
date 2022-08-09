@@ -1,0 +1,37 @@
+name: crucible-ci
+
+on:
+  # run on pull request events for the master branch only
+  pull_request:
+    branches: [ master ]
+
+  # allow for manual invocation from the actions tab
+  workflow_dispatch:
+
+jobs:
+  crucible-ci:
+    runs-on: [self-hosted, cpu-partitioning]
+
+    steps:
+    - name: Checkout bench-oslat
+      uses: actions/checkout@v2
+      with:
+        path: bench-oslat
+
+    - name: Checkout crucible-ci
+      uses: actions/checkout@v2
+      with:
+        repository: perftool-incubator/crucible-ci
+        ref: main
+        path: crucible-ci
+
+    - name: Run crucible-ci->integration-tests
+      uses: ./crucible-ci/.github/actions/integration-tests
+      with:
+        artifact_tag: "oslat"
+        ci_target: "oslat"
+        ci_target_dir: ${{ github.workspace }}/bench-oslat
+        scenarios: "oslat"
+        repeat_runs: "no"
+        run_samples: "1"
+        userenvs: "all"
