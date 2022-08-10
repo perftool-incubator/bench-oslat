@@ -10,7 +10,7 @@ on:
 
 jobs:
   crucible-ci:
-    runs-on: [self-hosted, cpu-partitioning]
+    runs-on: [self-hosted, cpu-partitioning, remotehost]
 
     steps:
     - name: Checkout bench-oslat
