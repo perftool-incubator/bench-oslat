@@ -125,7 +125,10 @@ if [ "${trace_control}" == "1" ]; then
     trace_args+=" --trace-control "
 fi
 
-validate_clocksource
+output=$(validate_clocksource)
+if [ $? != 0 ]; then
+    exit_error "${output}"
+fi
 
 cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread} ${trace_args}"
 echo "About to run: $cmd"
@@ -134,7 +137,10 @@ $cmd >oslat-bin-stderrout.txt 2>&1
 rc=$?
 date +%s.%N >end.txt
 
-validate_clocksource
+output=$(validate_clocksource)
+if [ $? != 0 ]; then
+    exit_error "${output}"
+fi
 
 if [ "$no_load_balance" == "1" ]; then
      enable_balance $cpus_list
