@@ -76,6 +76,7 @@ $sample{'rickshaw-bench-metric'}{'schema'}{'version'} = "2021.04.12";
 $period{'metric-files'} = \@metric_files;
 push(@periods, \%period);
 $sample{'periods'} = \@periods;
+$sample{'benchmark'} = 'oslat';
 $sample{'primary-period'} = 'measurement';
 $sample{'primary-metric'} = $primary_metric;
 my $coder = JSON::XS->new;
