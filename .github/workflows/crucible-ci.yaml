@@ -59,13 +59,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        scenario: []
         endpoint: ${{ fromJSON(needs.generate-job-matrix-parameters.outputs.endpoints_github) }}
         userenv: ${{ fromJSON(needs.generate-job-matrix-parameters.outputs.userenvs) }}
         exclude:
         - endpoint: "remotehost"
     steps:
-    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.userenv }})
+    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.userenv }}, ${{ matrix.scenario }})
       run: |
+        echo "scenario=${{ matrix.scenario }}"
         echo "endpoint=${{ matrix.endpoint }}"
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout bench-oslat
@@ -103,11 +105,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        scenario: []
         endpoint: ${{ fromJSON(needs.generate-job-matrix-parameters.outputs.endpoints_self) }}
         userenv: ${{ fromJSON(needs.generate-job-matrix-parameters.outputs.userenvs) }}
     steps:
-    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.userenv }})
+    - name: Matrix Parameters => (${{ matrix.endpoint }}, ${{ matrix.userenv }}, ${{ matrix.scenario }} )
       run: |
+        echo "scenario=${{ matrix.scenario }}"
         echo "endpoint=${{ matrix.endpoint }}"
         echo "userenv=${{ matrix.userenv }}"
     - name: checkout bench-oslat
