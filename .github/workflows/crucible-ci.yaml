@@ -51,7 +51,18 @@ jobs:
     - name: Echo generate-job-matrix-parameters outputs
       run: echo "${{ toJSON(needs.generate-job-matrix-parameters.outputs) }}"
 
+  crucible-ci-self-hosted-runners:
+    if: ${{ true }}
+    runs-on: ubuntu-latest
+    needs:
+    - generate-job-matrix-parameters
+    - display-job-matrix-parameters
+    steps:
+    - name: Confirm Success
+      run: echo "fake crucible-ci-self-hosted-runners complete"
+
   crucible-ci-github-runners:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs:
     - generate-job-matrix-parameters
@@ -98,6 +109,17 @@ jobs:
         ci_target_dir: ${{ github.workspace }}/bench-oslat
 
   crucible-ci-self-hosted-runners:
+    if: ${{ true }}
+    runs-on: [ self-hosted ]
+    needs:
+    - generate-job-matrix-parameters
+    - display-job-matrix-parameters
+    steps:
+    - name: Confirm Success
+      run: echo "fake crucible-ci-self-hosted-runners complete"
+
+  crucible-ci-self-hosted-runners:
+    if: ${{ false }}
     runs-on: [ self-hosted ]
     needs:
     - generate-job-matrix-parameters
