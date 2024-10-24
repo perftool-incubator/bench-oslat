@@ -17,13 +17,13 @@ fi
 eval set -- "$opts";
 while true; do
     case "$1" in
-	--stress-ng-tiles-per-cpu)
-	    shift;
-	    STRESS_NG_TILES_PER_CPU=$1
-	    shift;
-	    ;;
+        --stress-ng-tiles-per-cpu)
+            shift
+            STRESS_NG_TILES_PER_CPU=$1
+            shift
+            ;;
         --)
-            shift;
+            shift
             break
             ;;
         *)
@@ -66,7 +66,6 @@ echo "TEST_TILES: ${TEST_TILES}"
 
 CMD="taskset -c ${CPUS}"
 CMD+=" stress-ng"
-CMD+=" --taskset ${CPUS}"
 CMD+=" --cpu ${TEST_TILES}"
 CMD+=" --hdd ${TEST_TILES}"
 CMD+=" --io ${TEST_TILES}"
@@ -77,6 +76,7 @@ CMD+=" --stream ${TEST_TILES}"
 #sysinfo disabled: statfs /sys/firmware/efi/efivars produces SMIs
 #CMD+=" --sysinfo ${TEST_TILES}"
 CMD+=" --vm ${TEST_TILES}"
+CMD+=" --sock 500 --sock-zerocopy --sock-opts sendmsg"
 CMD+=" --timeout 0"
 CMD+=" --metrics"
 CMD+=" --times"
