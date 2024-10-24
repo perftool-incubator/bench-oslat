@@ -26,6 +26,8 @@ GetOptions ("runtime=s" => \$ignore,
             "rtprio=s" => \$ignore,
             "no-load-balance" => \$ignore,
             "smt=s" => \$ignore,
+            "duration=s" => \$ignore,
+            "cpu-main-thread=s" => \$ignore,
             );
 
 my $primary_metric = 'polling-latency-usec';
