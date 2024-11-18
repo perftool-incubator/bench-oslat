@@ -1,0 +1,37 @@
+{
+  "presets": {
+  },
+  "validations": {
+    "integer_gt_zero": {
+      "description": "a whole number > 0",
+      "args": [
+	 "duration"
+      ],
+      "vals": "^[1-9][0-9]*$"
+    },
+    "binary": {
+      "description": "0 or 1",
+      "args": [
+	 "trace-markers",
+     "trace-control",
+     "no-load-balance"
+      ],
+      "vals": "^[01]]$"
+    },
+    "rtprio": {
+      "description": "priority level of the oslat process (1-99)",
+      "args": [
+	 "rtprio"
+      ],
+      "vals": "^[1-9]$|^[1-9][0-9]$"
+    },
+    "onoff": {
+      "description": "on|off",
+      "args": [
+	 "smt"
+      ],
+      "vals": "on|off"
+    }
+
+  }
+}
