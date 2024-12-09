@@ -27,8 +27,10 @@ duration=60
 smt="on"
 trace_markers=0
 trace_control=0
+cpu_main_thread=${HK_CPUS}
+cpu_list=${WORKLOAD_CPUS}
 
-opts=$(getopt -q -o "" --longoptions "no-load-balance:,rtprio:,duration:,smt:,trace-markers:,trace-control:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "cpu-list:,cpu-main-thread:,no-load-balance:,rtprio:,duration:,smt:,trace-markers:,trace-control:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -36,45 +38,54 @@ fi
 eval set -- "$opts";
 while true; do
     case "$1" in
-	--trace-control)
-	    shift;
-	    trace_control=$1
-	    shift;
-	    ;;
-	--trace-markers)
-	    shift;
-	    trace_markers=$1
-	    shift;
-	    ;;
+        --trace-control)
+            shift
+            trace_control=$1
+            shift
+            ;;
+        --trace-markers)
+            shift
+            trace_markers=$1
+            shift
+            ;;
         --no-load-balance)
-            shift;
+            shift
             no_load_balance=$1
-            shift;
+            shift
             ;;
         --rtprio)
-            shift;
-            # TODO: exit if not between 1-99
+            shift
             rtprio_opt="--rtprio $1"
-            shift;
+            shift
             ;;
         --duration)
-            shift;
+            shift
             duration=$1
-            shift;
+            shift
             ;;
-	--smt)
-	    shift
-	    smt=$1
-	    shift
-	    ;;	   
+        --smt)
+            shift
+            smt=$1
+            shift
+            ;;
+        --cpu-list)
+            shift
+            cpu_list=$1
+            shift
+            ;;
+        --cpu-main-thread)
+            shift
+            cpu_main_thread=$1
+            shift
+            ;;
         --)
-            shift;
+            shift
             break
             ;;
         *)
             echo "Invalid option: $1"
             exit 1
-    esac
+        esac
 done
 
 if [ "$no_load_balance" == "1" ]; then
@@ -91,7 +102,14 @@ echo "about to run: ${cmd}"
 CMD_OUTPUT=$(${cmd})
 echo -e "${CMD_OUTPUT}"
 WORKLOAD_CPUS=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
-echo "WORLOAD_CPUS: ${WORKLOAD_CPUS}"
+echo "WORKLOAD_CPUS: ${WORKLOAD_CPUS}"
+
+if [[ -n "${cpu_list}" ]]; then
+    echo "Overriding WORKLOAD_CPUS: $WORKLOAD_CPUS w/ cpu-list: ${cpu_list}"
+    WORKLOAD_CPUS=${cpu_list}
+    echo "WORKLOAD_CPUS = $WORKLOAD_CPUS"
+fi
+
 
 cpu_str=""
 for cpu in $(echo $HK_CPUS | sed -e "s/,/ /g"); do
@@ -104,8 +122,40 @@ echo -e "${CMD_OUTPUT}"
 HK_CPUS=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
 echo "HK_CPUS: ${HK_CPUS}"
 
-# get the first CPU from HK_CPUS to use as the oslat main thread
-cpu_main_thread=$(echo ${HK_CPUS} | awk -F, '{ print $1 }')
+if [ -n $cpu_main_thread ]; then
+    cpu_str=""
+    for cpu in $(echo $cpu_main_thread | sed -e "s/,/ /g"); do
+        cpu_str+=" --cpu $cpu"
+    done
+    # get a comma separated cpu list from cpu-main-thread e.g. 1-3=1,2,3
+    cmd="${TOOLBOX_HOME}/bin/get-cpus-ordered.py --smt ${smt} ${cpu_str}"
+    echo "about to run: ${cmd}"
+    CMD_OUTPUT=$(${cmd})
+    echo -e "${CMD_OUTPUT}"
+    cpu_main_thread=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
+    echo "cpu_main_thread: ${cpu_main_thread}"
+
+    # remove cpu-main-thread that from the workload cpus
+    IFS=',' read -r -a to_remove <<< "$cpu_main_thread"
+    # Loop over each element of to_remove and remove from cpu
+    for cpu in "${to_remove[@]}"; do
+        # Remove the specific number from WORKLOAD_CPUS
+        WORKLOAD_CPUS=$(echo "$WORKLOAD_CPUS" | sed "s/\b$cpu\b//g")
+    done
+    # Clean up (remove leading/trailing commas and consecutive commas)
+    WORKLOAD_CPUS=$(echo "$WORKLOAD_CPUS" | sed 's/^,\|,$//g' | sed 's/,,*/,/g')
+else
+    echo "cpu-main-thread is not defined, using the housekeeping cpus..."
+    cpu_main_thread=$(echo ${HK_CPUS} | awk -F, '{ print $1 }')
+fi
+
+if [[ -z "$WORKLOAD_CPUS" ]]; then
+    echo "Ivalid WORKLOAD_CPUS: $WORKLOAD_CPUS"
+    exit 1
+fi
+
+echo "cpu-main-thread: ${cpu_main_thread}"
+echo "WORKLOAD_CPUS: ${WORKLOAD_CPUS}"
 
 echo
 cmd="oslat --help"
@@ -130,7 +180,7 @@ if [ $? != 0 ]; then
     exit_error "${output}"
 fi
 
-cmd="taskset -c ${HK_CPUS},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread} ${trace_args}"
+cmd="taskset -c ${cpu_main_thread},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread} ${trace_args}"
 echo "About to run: $cmd"
 date +%s.%N >begin.txt
 $cmd >oslat-bin-stderrout.txt 2>&1
