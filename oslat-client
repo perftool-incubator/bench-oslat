@@ -149,3 +149,5 @@ fi
 if [ $rc -gt 0 ]; then
     exit_error "`cat oslat-bin-stderrout.txt`"
 fi
+
+echo "nop"
