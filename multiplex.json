@@ -31,7 +31,14 @@
 	 "smt"
       ],
       "vals": "on|off"
+    },
+    "integer_range": {
+      "description": "a range of whole numbers >= 0",
+      "args": [
+        "cpu-list",
+        "cpu-main-thread"
+      ],
+      "vals": "(\\d+(-\\d+)?(,\\s*\\d+(-\\d+)?)*|\\d+(-\\d+)?)"
     }
-
   }
 }

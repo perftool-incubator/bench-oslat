@@ -17,13 +17,13 @@ fi
 eval set -- "$opts";
 while true; do
     case "$1" in
-	--stress-ng-tiles-per-cpu)
-	    shift;
-	    STRESS_NG_TILES_PER_CPU=$1
-	    shift;
-	    ;;
+        --stress-ng-tiles-per-cpu)
+            shift
+            STRESS_NG_TILES_PER_CPU=$1
+            shift
+            ;;
         --)
-            shift;
+            shift
             break
             ;;
         *)
