@@ -5,30 +5,39 @@
     "integer_gt_zero": {
       "description": "a whole number > 0",
       "args": [
-	 "duration"
+        "duration",
+        "network-connections",
+        "stress-ng-tiles-per-cpu"
       ],
       "vals": "^[1-9][0-9]*$"
     },
     "binary": {
       "description": "0 or 1",
       "args": [
-	 "trace-markers",
-     "trace-control",
-     "no-load-balance"
+	    "trace-markers",
+        "trace-control",
+        "no-load-balance"
       ],
-      "vals": "^[01]]$"
+      "vals": "0|1"
     },
     "rtprio": {
       "description": "priority level of the oslat process (1-99)",
       "args": [
-	 "rtprio"
+	    "rtprio"
       ],
       "vals": "^[1-9]$|^[1-9][0-9]$"
+    },
+    "yesno": {
+      "description": "yes|no",
+      "args": [
+        "sysinfo-test"
+      ],
+      "vals": "yes|no"
     },
     "onoff": {
       "description": "on|off",
       "args": [
-	 "smt"
+	    "smt"
       ],
       "vals": "on|off"
     },
