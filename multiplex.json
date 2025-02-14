@@ -30,7 +30,8 @@
     "yesno": {
       "description": "yes|no",
       "args": [
-        "sysinfo-test"
+        "sysinfo-test",
+	"zero-omit"
       ],
       "vals": "yes|no"
     },
@@ -48,6 +49,20 @@
         "cpu-main-thread"
       ],
       "vals": "(\\d+(-\\d+)?(,\\s*\\d+(-\\d+)?)*|\\d+(-\\d+)?)"
+    },
+    "integer_range_4_1024": {
+      "description": "a whole number >=4 and <= 1024",
+      "args": [
+	 "bucket-size"
+      ],
+      "vals": "^(?:[4-9]|[1-9][0-9]|[1-9][0-9]{2}|1024)$"
+    },
+    "integer_1_10_100_1000": {
+      "description": "a whole number [1,10,100,1000]",
+      "args": [
+	 "bucket-width"
+      ],
+      "vals": "^(1|10|100|1000)$"
     }
   }
 }
