@@ -30,7 +30,7 @@ trace_control=0
 cpu_main_thread=${HK_CPUS}
 cpu_list=${WORKLOAD_CPUS}
 
-opts=$(getopt -q -o "" --longoptions "cpu-list:,cpu-main-thread:,no-load-balance:,rtprio:,duration:,smt:,trace-markers:,trace-control:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "cpu-list:,cpu-main-thread:,no-load-balance:,rtprio:,duration:,smt:,trace-markers:,trace-control:,bucket-size:,bucket-width:,zero-omit:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -78,6 +78,23 @@ while true; do
             cpu_main_thread=$1
             shift
             ;;
+        --bucket-size)
+           shift;
+           bucket_size=" --bucket-size $1"
+           shift;
+           ;;
+        --bucket-width)
+           shift;
+           bucket_width=" --bucket-width $1"
+           shift;
+           ;;
+        --zero-omit)
+           shift;
+	   if [ "$1" == "yes" ]; then
+               zero_omit=" --zero-omit"
+	   fi
+	   shift;
+           ;;
         --)
             shift
             break
@@ -180,7 +197,15 @@ if [ $? != 0 ]; then
     exit_error "${output}"
 fi
 
-cmd="taskset -c ${cpu_main_thread},${WORKLOAD_CPUS} oslat --duration ${duration} ${rtprio_opt} --cpu-list ${WORKLOAD_CPUS} --cpu-main-thread ${cpu_main_thread} ${trace_args}"
+cmd="taskset -c ${cpu_main_thread},${WORKLOAD_CPUS} oslat \
+	--duration ${duration} \
+	${rtprio_opt} \
+	--cpu-list ${WORKLOAD_CPUS} \
+	--cpu-main-thread ${cpu_main_thread} \
+	${trace_args} \
+	${bucket_size} \
+	${bucket_width} \
+	${zero_omit}"
 echo "About to run: $cmd"
 date +%s.%N >begin.txt
 $cmd >oslat-bin-stderrout.txt 2>&1
