@@ -8,8 +8,10 @@ exec 2>&1
 . /usr/bin/oslat-base || (echo "/usr/bin/oslat-base not found"; exit 1)
 
 STRESS_NG_TILES_PER_CPU=1
+NETWORK_CONNECTIONS=0
+SYSINFO_TEST="no"
 
-opts=$(getopt -q -o "" --longoptions "stress-ng-tiles-per-cpu:" -n "getopt.sh" -- "$@");
+opts=$(getopt -q -o "" --longoptions "network-connections:,sysinfo-test:,stress-ng-tiles-per-cpu:" -n "getopt.sh" -- "$@");
 if [ $? -ne 0 ]; then
     printf -- "\tUnrecognized option specified\n\n"
     exit 1
@@ -17,13 +19,23 @@ fi
 eval set -- "$opts";
 while true; do
     case "$1" in
-	--stress-ng-tiles-per-cpu)
-	    shift;
-	    STRESS_NG_TILES_PER_CPU=$1
-	    shift;
-	    ;;
+        --stress-ng-tiles-per-cpu)
+            shift
+            STRESS_NG_TILES_PER_CPU=$1
+            shift
+            ;;
+       --network-connections)
+            shift
+            NETWORK_CONNECTIONS=$1
+            shift
+            ;;
+       --sysinfo-test)
+            shift
+            SYSINFO_TEST=$1
+            shift
+            ;;
         --)
-            shift;
+            shift
             break
             ;;
         *)
@@ -73,8 +85,14 @@ CMD+=" --malloc ${TEST_TILES}"
 CMD+=" --mmap ${TEST_TILES}"
 CMD+=" --msg ${TEST_TILES}"
 CMD+=" --stream ${TEST_TILES}"
-CMD+=" --sysinfo ${TEST_TILES}"
+if [ ${SYSINFO_TEST} == "yes" ]; then
+    #NOTE(rfolco): sysinfo - statfs /sys/firmware/efi/efivars produces SMIs
+    CMD+=" --sysinfo ${TEST_TILES}"
+fi
 CMD+=" --vm ${TEST_TILES}"
+if [ ${NETWORK_CONNECTIONS} -gt 0 ]; then
+    CMD+=" --sock ${NETWORK_CONNECTIONS} --sock-zerocopy --sock-opts sendmsg"
+fi
 CMD+=" --timeout 0"
 CMD+=" --metrics"
 CMD+=" --times"
