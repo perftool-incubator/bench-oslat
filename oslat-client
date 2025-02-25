@@ -105,10 +105,6 @@ while true; do
         esac
 done
 
-if [ "$no_load_balance" == "1" ]; then
-     disable_balance $cpus_list
-fi
-
 # adjust CPUs to use
 cpu_str=""
 for cpu in $(echo $WORKLOAD_CPUS | sed -e "s/,/ /g"); do
@@ -126,7 +122,6 @@ if [[ -n "${cpu_list}" ]]; then
     WORKLOAD_CPUS=${cpu_list}
     echo "WORKLOAD_CPUS = $WORKLOAD_CPUS"
 fi
-
 
 cpu_str=""
 for cpu in $(echo $HK_CPUS | sed -e "s/,/ /g"); do
@@ -174,6 +169,12 @@ fi
 echo "cpu-main-thread: ${cpu_main_thread}"
 echo "WORKLOAD_CPUS: ${WORKLOAD_CPUS}"
 
+if [ "$no_load_balance" == "1" ]; then
+     cmd="disable_balance ${WORKLOAD_CPUS}"
+     echo "About to run: ${cmd}"
+     ${cmd} > disable_balance.txt 2>&1
+fi
+
 echo
 cmd="oslat --help"
 echo "About to run: $cmd"
@@ -218,7 +219,9 @@ if [ $? != 0 ]; then
 fi
 
 if [ "$no_load_balance" == "1" ]; then
-     enable_balance $cpus_list
+     cmd="enable_balance ${WORKLOAD_CPUS}"
+     echo "About to run: ${cmd}"
+     ${cmd} > enable_balance.txt 2>&1
 fi
 
 if [ $rc -gt 0 ]; then
