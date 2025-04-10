@@ -21,7 +21,7 @@
                 "deps",
                 "numactl_src",
 		"rttests_patches",
-                "rttests_src_glibc",
+                "rttests_src_sched",
 		"stress-ng_src"
             ]
         }
@@ -65,7 +65,7 @@
 			"dst": "/root"
 		    },
                     {
-			"src": "%bench-dir%/oslat-glibc-headers.patch",
+			"src": "%bench-dir%/oslat-sched-headers.patch",
 			"dst": "/root"
 		    }
 
@@ -87,14 +87,14 @@
 	    }
 	},
 	{
-	    "name": "rttests_src_glibc",
+	    "name": "rttests_src_sched",
 	    "type": "manual",
 	    "manual_info": {
 		"commands": [
 		    "git clone git://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git /root/rt-tests",
 		    "cd /root/rt-tests; git checkout v2.7",
 		    "cd /root/rt-tests; patch -p1 < /root/oslat-trace-updates.patch",
-		    "cd /root/rt-tests; patch -p1 < /root/oslat-glibc-headers.patch",
+		    "cd /root/rt-tests; patch -p1 < /root/oslat-sched-headers.patch",
 		    "cd /root/rt-tests; make",
 		    "cd /root/rt-tests; make install",
 		    "ldconfig"
