@@ -82,7 +82,8 @@
 		    "cd /root/rt-tests; patch -p1 < /root/oslat-trace-updates.patch",
 		    "cd /root/rt-tests; make",
 		    "cd /root/rt-tests; make install",
-		    "ldconfig"
+		    "ldconfig",
+                    "false"
 		]
 	    }
 	},
@@ -97,7 +98,8 @@
 		    "cd /root/rt-tests; patch -p1 < /root/oslat-sched-headers.patch",
 		    "cd /root/rt-tests; make",
 		    "cd /root/rt-tests; make install",
-		    "ldconfig"
+		    "ldconfig",
+                    "false"
 		]
 	    }
 	},
