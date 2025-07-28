@@ -1,7 +1,7 @@
 {
     "workshop": {
         "schema": {
-            "version": "2020.03.02"
+            "version": "2025.07.25"
         }
     },
     "userenvs": [
@@ -16,27 +16,11 @@
             ]
         },
 	{
-            "name": "alma9",
-            "requirements": [
-                "deps",
-                "numactl_src",
-		"rttests_patches",
-                "rttests_src_sched",
-		"stress-ng_src"
-            ]
-        },
-	{
-            "name": "stream9",
-            "requirements": [
-                "deps",
-                "numactl_src",
-		"rttests_patches",
-                "rttests_src_sched",
-		"stress-ng_src"
-            ]
-        },
-	{
-            "name": "rhubi9",
+            "name": [
+                "alma9",
+                "rhubi9",
+                "stream9"
+            ],
             "requirements": [
                 "deps",
                 "numactl_src",
