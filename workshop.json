@@ -20,7 +20,8 @@
                 "alma9",
                 "fedora42",
                 "rhubi9",
-                "stream9"
+                "stream9",
+                "stream10"
             ],
             "requirements": [
                 "deps",
