@@ -6,7 +6,7 @@
     },
     "benchmark": "oslat",
     "controller" : {
-        "post-script" : "%bench-dir%/oslat-post-process"
+        "post-script" : "%bench-dir%/oslat-post-process.py"
     },
     "client" : {
         "files-from-controller": [
