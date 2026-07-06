@@ -162,7 +162,7 @@ else
 fi
 
 if [[ -z "$WORKLOAD_CPUS" ]]; then
-    echo "Ivalid WORKLOAD_CPUS: $WORKLOAD_CPUS"
+    echo "Invalid WORKLOAD_CPUS: $WORKLOAD_CPUS"
     exit 1
 fi
 
