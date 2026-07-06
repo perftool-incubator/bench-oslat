@@ -134,7 +134,7 @@ echo -e "${CMD_OUTPUT}"
 HK_CPUS=$(echo -e "${CMD_OUTPUT}" | grep "final cpus:" | awk '{ print $3 }')
 echo "HK_CPUS: ${HK_CPUS}"
 
-if [ -n $cpu_main_thread ]; then
+if [ -n "${cpu_main_thread}" ]; then
     cpu_str=""
     for cpu in $(echo $cpu_main_thread | sed -e "s/,/ /g"); do
         cpu_str+=" --cpu $cpu"
