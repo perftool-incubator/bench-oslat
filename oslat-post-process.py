@@ -52,7 +52,7 @@ def main():
                 latency_str = line.split(":", 1)[1].rsplit("(us)", 1)[0]
                 latencies = [int(x) for x in latency_str.split()]
                 system_max_latency = max(latencies)
-                desc = {"source": "oslat", "type": primary_metric, "class": "count"}
+                desc = {"source": "oslat", "type": primary_metric, "class": "latency", "default-aggregation": "max"}
                 sample = {"begin": times["begin"], "end": times["end"], "value": system_max_latency}
                 metrics.log_sample("0", desc, {}, sample)
 
